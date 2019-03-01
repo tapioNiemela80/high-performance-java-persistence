@@ -184,13 +184,16 @@ public class PaginationTest extends AbstractTest {
     public void testFetchAndPaginateWithTwoQueries() {
         doInJPA(entityManager -> {
             List<Long> postIds = entityManager
-            .createQuery(
-                "select p.id " +
+            .createNativeQuery(
+                "select distinct(t.id) from (p.id " +
                 "from Post p " +
-                "where p.title like :titlePattern " +
-                "order by p.createdOn", Long.class)
-            .setParameter("titlePattern", "High-Performance Java Persistence %")
-            .setMaxResults(5)
+                "join PostComment pc " +                
+                "on p.id = pc.post_id " +                                
+                "where pc.review like :review " +
+                "order by pc.review offset :offSet rows fetch next :limit rows only) t", Long.class)
+            .setParameter("review", "Great%")
+            .setParameter("offSet", 0)
+            .setParameter("limit", 5)                                    
             .getResultList();
 
             List<Post> posts = entityManager.createQuery(
